@@ -1,0 +1,59 @@
+import requests
+from bs4 import BeautifulSoup
+import os
+from time import sleep
+
+all_url = 'http://www.avav2279.com/newslist/38/index-1.html'
+
+Hostreferer = {
+    'User-Agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)',
+    'Referer': 'http://www.avav2279.com'
+}
+
+path = 'D:/mzitu/'
+
+
+start_html = requests.get(all_url, headers=Hostreferer)
+soup = BeautifulSoup(start_html.text, 'html.parser')
+max_page = soup.find_all('strong')[2].text
+
+# print(max_page)
+
+same_page = 'http://www.avav2279.com/news/'
+
+for n in range(89887, 89874, -1):
+    ul = same_page + str(n) + '.html'
+
+    start_html = requests.get(ul, headers=Hostreferer)
+    soup = BeautifulSoup(start_html.text, 'html.parser')
+    title = soup.find('h1').text
+    same_page_0 = soup.find('img')['src']
+    print('准备爬取:' + title)
+
+    if os.path.exists(path + title.strip()):
+        flag = 1
+    else:
+        os.makedirs(path + title.strip())
+        flag = 0
+    os.chdir(path + title.strip())
+
+    pic_max = int(soup.find_all('img')[-1]['src'].split('/')[-1].split('.')[0])
+
+    if flag == 1 and len(os.listdir(path + title.strip())) >= pic_max:
+        print('保存完毕， 跳过')
+        continue
+
+    for num in range(1, int(pic_max) + 1):
+        if num < 10:
+            pic = same_page_0[:-6] + '0' + str(num) + '.jpg'
+        else:
+            pic = same_page_0[:-6] + str(num) + '.jpg'
+
+        print(pic)
+        html = requests.get(pic, headers=Hostreferer)
+        filename = pic.split('/')[-1]
+
+        with open(filename, 'wb') as f:
+            f.write(html.content)
+
+        sleep(0.2)
